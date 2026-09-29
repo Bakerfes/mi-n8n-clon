@@ -1,0 +1,9 @@
+{
+  "name": "mi-n8n-clon",
+  "version": "1.0.0",
+  "description": "Clon de n8n personal",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev"
+  }
+}
