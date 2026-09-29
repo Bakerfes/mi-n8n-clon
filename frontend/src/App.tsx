@@ -9,96 +9,102 @@ import {
   useNodesState,
   useEdgesState
 } from '@xyflow/react';
-import type { 
-  OnNodesChange, 
-  OnEdgesChange, 
-  OnConnect 
-} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
+const initialNodes = [
+  { 
+    id: '1', 
+    type: 'default',
+    position: { x: 50, y: 150 }, 
+    data: { 
+      url: "https://news.ycombinator.com/",
+      label: (
+        <div style={{ padding: '4px' }}>
+          <strong>📰 Lector Web (Scraper)</strong>
+          <div style={{ marginTop: '8px', fontSize: '12px' }}>
+            <span>URL a extraer:</span>
+            <input 
+              type="text" 
+              defaultValue="https://news.ycombinator.com/" 
+              onChange={(e) => {
+                // @ts-ignore
+                setNodes((nds) => 
+                  nds.map((node: any) => {
+                    if (node.id === '1') {
+                      return {
+                        ...node,
+                        data: { ...node.data, url: e.target.value }
+                      };
+                    }
+                    return node;
+                  })
+                );
+              }}
+              style={{ width: '100%', marginTop: '4px', padding: '4px', fontSize: '11px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      ) 
+    },
+    style: { background: '#ffffff', border: '2px solid #38bdf8', borderRadius: '10px', padding: '10px', width: '240px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }
+  },
+  { 
+    id: '2', 
+    type: 'default',
+    position: { x: 360, y: 150 }, 
+    data: { 
+      label: (
+        <div style={{ padding: '4px' }}>
+          <strong>🤖 Procesador Gemini</strong>
+          <div style={{ marginTop: '8px', fontSize: '11px', color: '#475569' }}>
+            Optimiza el contenido para redes.
+          </div>
+        </div>
+      ) 
+    },
+    style: { background: '#ffffff', border: '2px solid #a855f7', borderRadius: '10px', padding: '10px', width: '240px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }
+  },
+  { 
+    id: '3', 
+    type: 'default',
+    position: { x: 670, y: 150 }, 
+    data: { 
+      label: (
+        <div style={{ padding: '4px' }}>
+          <strong>🎨 Generador Gráfico</strong>
+          <div style={{ marginTop: '8px', fontSize: '11px', color: '#475569' }}>
+            Crea y guarda la imagen PNG.
+          </div>
+        </div>
+      ) 
+    },
+    style: { background: '#ffffff', border: '2px solid #ec4899', borderRadius: '10px', padding: '10px', width: '240px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }
+  }
+];
+
+const initialEdges = [
+  { id: 'e1-2', source: '1', target: '2', animated: true },
+  { id: 'e2-3', source: '2', target: '3', animated: true }
+];
+
 export default function App() {
-  const [nodes, setNodes] = useNodesState([
-    { 
-      id: '1', 
-      type: 'default',
-      position: { x: 50, y: 150 }, 
-      data: { 
-        url: "https://news.ycombinator.com/",
-        label: (
-          <div style={{ padding: '4px' }}>
-            <strong>📰 Lector Web (Scraper)</strong>
-            <div style={{ marginTop: '8px', fontSize: '12px' }}>
-              <span>URL a extraer:</span>
-              <input 
-                type="text" 
-                defaultValue="https://news.ycombinator.com/" 
-                onChange={(e) => {
-                  setNodes((nds) => 
-                    nds.map((node) => node.id === '1' ? { ...node, data: { ...node.data, url: e.target.value } } : node)
-                  );
-                }}
-                style={{ width: '100%', marginTop: '4px', padding: '4px', fontSize: '11px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
-          </div>
-        ) 
-      },
-      style: { background: '#ffffff', border: '2px solid #38bdf8', borderRadius: '10px', padding: '10px', width: '240px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }
-    },
-    { 
-      id: '2', 
-      type: 'default',
-      position: { x: 360, y: 150 }, 
-      data: { 
-        label: (
-          <div style={{ padding: '4px' }}>
-            <strong>🤖 Procesador Gemini</strong>
-            <div style={{ marginTop: '8px', fontSize: '11px', color: '#475569' }}>
-              Optimiza el contenido para redes.
-            </div>
-          </div>
-        ) 
-      },
-      style: { background: '#ffffff', border: '2px solid #a855f7', borderRadius: '10px', padding: '10px', width: '240px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }
-    },
-    { 
-      id: '3', 
-      type: 'default',
-      position: { x: 670, y: 150 }, 
-      data: { 
-        label: (
-          <div style={{ padding: '4px' }}>
-            <strong>🎨 Generador Gráfico</strong>
-            <div style={{ marginTop: '8px', fontSize: '11px', color: '#475569' }}>
-              Crea y guarda la imagen PNG.
-            </div>
-          </div>
-        ) 
-      },
-      style: { background: '#ffffff', border: '2px solid #ec4899', borderRadius: '10px', padding: '10px', width: '240px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }
-    }
-  ]);
-
-  const [edges, setEdges] = useEdgesState([
-    { id: 'e1-2', source: '1', target: '2', animated: true },
-    { id: 'e2-3', source: '2', target: '3', animated: true }
-  ]);
-
+  const [nodes, setNodes] = useNodesState(initialNodes);
+  const [edges, setEdges] = useEdgesState(initialEdges);
   const [resultadoEjecucion, setResultadoEjecucion] = useState<any>(null);
 
-  const onNodesChange: OnNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+  const onNodesChange = useCallback(
+    (changes: any) => setNodes((nds) => applyNodeChanges(changes, nds)),
     [setNodes]
   );
   
-  const onEdgesChange: OnEdgesChange = useCallback(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+  const onEdgesChange = useCallback(
+    (changes: any) => setEdges((eds) => applyEdgeChanges(changes, eds)),
     [setEdges]
   );
   
-  const onConnect: OnConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
+  const onConnect = useCallback(
+    (params: any) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
