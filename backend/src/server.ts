@@ -1,36 +1,90 @@
 import express from 'express';
 import cors from 'cors';
-import { ejecutarNodoNoticias, ejecutarNodoGeminiLocal, ejecutarNodoGeneradorImagen } from './engine/workflowEngine.js';
+import {
+  ejecutarNodoNoticias,
+  ejecutarNodoGeminiLocal,
+  ejecutarNodoGeneradorImagen,
+  renderizarTarjeta,
+} from './engine/workflowEngine.js';
+import type { CanvasNode, NodeEvent, WorkflowItem } from './engine/types.js';
 
 const app = express();
-app.use(cors({ origin: 'http://localhost:5173' })); 
-app.use(express.json());
+app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(express.json({ limit: '10mb' }));
+
+const pausa = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+app.post('/api/render-card', async (req, res) => {
+  try {
+    const { datos, indice = 0, total = 1, opciones = {} } = req.body ?? {};
+    if (!datos) {
+      return res.status(400).json({ error: 'Faltan los datos de la tarjeta' });
+    }
+    const resultado = await renderizarTarjeta(datos, Number(indice) || 0, Number(total) || 1, opciones);
+    return res.json({ success: true, resultado });
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : 'Error al renderizar tarjeta';
+    console.error('❌ Error en /api/render-card:', mensaje);
+    return res.status(500).json({ error: mensaje });
+  }
+});
 
 app.post('/api/execute', async (req, res) => {
-  const { nodes, connections } = req.body;
-  
+  const nodes: CanvasNode[] = Array.isArray(req.body?.nodes) ? req.body.nodes : [];
+
   console.log('\n========================================');
-  console.log('🚀 INICIANDO EJECUCIÓN DEL FLUJO DE REDES');
+  console.log('🚀 INICIANDO EJECUCIÓN DEL FLUJO');
   console.log('========================================');
-  console.log(`Nodos en el lienzo: ${nodes.length}`);
 
-  try {
-    const salidaNodo1 = await ejecutarNodoNoticias(nodes);
-    const salidaNodo2 = await ejecutarNodoGeminiLocal(salidaNodo1);
-    const salidaFinal = await ejecutarNodoGeneradorImagen(salidaNodo2);
+  res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.flushHeaders();
 
-    console.log('✅ ¡Flujo completado con éxito!');
-    
-    res.json({ 
-      success: true, 
-      message: 'Flujo ejecutado correctamente',
-      data: salidaFinal 
-    });
+  const emitir = (evento: NodeEvent) => {
+    res.write(`${JSON.stringify(evento)}\n`);
+  };
 
-  } catch (error) {
-    console.error('❌ Error ejecutando el flujo:', error);
-    res.status(500).json({ success: false, error: 'Fallo en la ejecución del motor' });
+  const pasos: { id: string; run: (entrada: WorkflowItem[]) => Promise<WorkflowItem[]> }[] = [
+    { id: '1', run: () => ejecutarNodoNoticias(nodes) },
+    { id: '2', run: (entrada) => ejecutarNodoGeminiLocal(entrada) },
+    { id: '3', run: (entrada) => ejecutarNodoGeneradorImagen(entrada, nodes) },
+  ];
+
+  let datos: WorkflowItem[] = [];
+
+  for (const paso of pasos) {
+    emitir({ type: 'node', nodeId: paso.id, status: 'running' });
+    await pausa(500); // solo para que se aprecie la animación; puedes quitarla
+    const inicio = Date.now();
+
+    try {
+      datos = await paso.run(datos);
+      emitir({
+        type: 'node',
+        nodeId: paso.id,
+        status: 'success',
+        durationMs: Date.now() - inicio,
+        output: datos.map((d) => d.json),
+      });
+    } catch (error) {
+      const mensaje = error instanceof Error ? error.message : 'Error desconocido';
+      console.error(`❌ Nodo ${paso.id} falló:`, mensaje);
+      emitir({
+        type: 'node',
+        nodeId: paso.id,
+        status: 'error',
+        durationMs: Date.now() - inicio,
+        error: mensaje,
+      });
+      emitir({ type: 'done', success: false });
+      res.end();
+      return;
+    }
   }
+
+  console.log('✅ ¡Flujo completado con éxito!');
+  emitir({ type: 'done', success: true });
+  res.end();
 });
 
 const PORT = 3001;
