@@ -4,7 +4,18 @@ export interface WorkflowItem {
 
 export interface CanvasNode {
   id: string;
-  data?: { url?: string; cantidad?: number; evitarRepetidas?: boolean; colorAcento?: string };
+  data?: {
+    url?: string;
+    cantidad?: number;
+    evitarRepetidas?: boolean;
+    colorAcento?: string;
+    bufferAccessToken?: string;
+    bufferProfileId?: string;
+    bufferModo?: 'queue' | 'schedule' | 'now';
+    bufferFechaProgramada?: string;
+    canalNombre?: string;
+    imgbbApiKey?: string;
+  };
 }
 
 export type NodeEvent =

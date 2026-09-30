@@ -14,60 +14,18 @@ const URL_POR_DEFECTO = URL_GOOGLE_NOTICIAS_COLOMBIA;
 const carpetaDestino =
   process.env.OUTPUT_DIR ?? path.join(os.homedir(), 'Desktop', 'posts_generados');
 
-const MAX_TITULARES = 20;        // cuántos titulares se leen de la fuente
-const CANTIDAD_POR_DEFECTO = 5;  // cuántas noticias se procesan por ejecución
+const MAX_TITULARES = 20;        // cuÃ¡ntos titulares se leen de la fuente
+const CANTIDAD_POR_DEFECTO = 5;  // cuÃ¡ntas noticias se procesan por ejecuciÃ³n
 const CANTIDAD_MAXIMA = 10;
 const ARCHIVO_HISTORIAL = path.join(carpetaDestino, 'historial.json');
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Utilidades compartidas
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const normalizarEspacios = (t: string): string => t.replace(/\s+/g, ' ').trim();
 
-/** Limpia caracteres mojibake y normaliza comillas para visualización impecable en tarjetas y Buffer */
-const sanitizarTipografia = (texto: string): string => {
-  if (!texto) return '';
-  return texto
-    // Ellipsis & dashes & quotes
-    .replace(/\u00E2\u20AC\u00A6|â€¦/g, '...')
-    .replace(/\u00E2\u20AC\u2013|â€“/g, '–')
-    .replace(/\u00E2\u20AC\u2014|â€”/g, '—')
-    .replace(/\u00E2\u20AC\u0153|\u00E2\u20AC\u009D|â€œ|â€/g, '"')
-    .replace(/\u00E2\u20AC\u02DC|\u00E2\u20AC\u2122|â€˜|â€™/g, "'")
-    // Spanish question/exclamation marks
-    .replace(/\u00C2\u00BF|Â¿/g, '¿')
-    .replace(/\u00C2\u00A1|Â¡/g, '¡')
-    // Accented vowels
-    .replace(/\u00C3\u00A1|Ã¡/g, 'á')
-    .replace(/\u00C3\u00A9|Ã©/g, 'é')
-    .replace(/\u00C3\u00AD|Ã­/g, 'í')
-    .replace(/\u00C3\u00B3|Ã³/g, 'ó')
-    .replace(/\u00C3\u00BA|Ãº/g, 'ú')
-    .replace(/\u00C3\u00B1|Ã±/g, 'ñ')
-    .replace(/\u00C3\u0081|Ã /g, 'Á')
-    .replace(/\u00C3\u0089|Ã‰/g, 'É')
-    .replace(/\u00C3\u008D|Ã /g, 'Í')
-    .replace(/\u00C3\u0093|Ã"/g, 'Ó')
-    .replace(/\u00C3\u009A|Ãš/g, 'Ú')
-    // Emojis commonly mangled
-    .replace(/\u00F0\u0178\u0161\u00A8|ðŸš¨/g, '🚨')
-    .replace(/\u00F0\u0178\u201C\u00B0|ðŸ“°/g, '📰')
-    .replace(/\u00F0\u0178\u2019\u00AC|ðŸ’¬/g, '💬')
-    .replace(/\u00F0\u0178\u201C\u00A2|ðŸ“¢/g, '📢')
-    .replace(/\u00F0\u0178\u203A\u00EF\u00B8\u008F|ðŸ›ï¸/g, '🏛️')
-    .replace(/\u00F0\u0178\u0161\u00A6|ðŸš¦/g, '🚦')
-    .replace(/\u00F0\u0178\u2019\u00B0|ðŸ’°/g, '💰')
-    .replace(/\u00E2\u0161\u00BD|âš½/g, '⚽')
-    .replace(/\u00F0\u0178\u0152\u00A6\u00EF\u00B8\u008F|ðŸŒ¦ï¸/g, '⚠️')
-    .replace(/\u00F0\u0178\u00A9\u00BA|ðŸ©º/g, '🏥')
-    .replace(/\u00F0\u0178\u017D\u201C|ðŸŽ“/g, '🎓')
-    .replace(/\u00F0\u0178\u017D\u00AC|ðŸŽ¬/g, '🎭')
-    .replace(/\u00F0\u0178\u0152\u017D|ðŸŒŽ/g, '🌍');
-};
-
-
 const recortar = (texto: string, max: number): string =>
-  texto.length > max ? `${texto.slice(0, max - 3).trimEnd()}...` : texto;
+  texto.length > max ? `${texto.slice(0, max - 1).trimEnd()}â€¦` : texto;
 
 const normalizar = (t: string): string =>
   t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -86,17 +44,17 @@ const leerHistorial = (): EntradaHistorial[] => {
     const datos: unknown = JSON.parse(fs.readFileSync(ARCHIVO_HISTORIAL, 'utf-8'));
     return Array.isArray(datos) ? (datos as EntradaHistorial[]) : [];
   } catch {
-    return []; // no existe todavía o está dañado
+    return []; // no existe todavÃ­a o estÃ¡ daÃ±ado
   }
 };
 
 const registrarEnHistorial = (nuevas: EntradaHistorial[]): void => {
-  const historial = [...leerHistorial(), ...nuevas].slice(-500); // se conservan las últimas 500
+  const historial = [...leerHistorial(), ...nuevas].slice(-500); // se conservan las Ãºltimas 500
   fs.mkdirSync(carpetaDestino, { recursive: true });
   fs.writeFileSync(ARCHIVO_HISTORIAL, JSON.stringify(historial, null, 2), 'utf-8');
 };
 
-// Dos titulares se consideran "la misma noticia" si comparten >= 70 % de sus palabras significativas
+// Dos titulares se consideran "la misma noticia" si comparten â‰¥ 70 % de sus palabras significativas
 const sonSimilares = (a: string, b: string): boolean => {
   const A = new Set(claveDeTitular(a).split(' ').filter((p) => p.length > 3));
   const B = new Set(claveDeTitular(b).split(' ').filter((p) => p.length > 3));
@@ -119,9 +77,9 @@ const STOPWORDS = new Set([
   'tras', 'segun', 'durante', 'luego', 'aunque', 'ayer', 'horas', 'cuando', 'donde', 'quien', 'quienes', 'asi', 'esto',
 ]);
 
-// ─────────────────────────────────────────────
-// Banco de imágenes temáticas de alta resolución (Respaldo verificado)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Banco de imÃ¡genes temÃ¡ticas de alta resoluciÃ³n (Respaldo verificado)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const BANCO_IMAGENES_TEMATICAS: Record<string, string[]> = {
   economia: [
     'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=1280&q=80',
@@ -188,25 +146,25 @@ const hashString = (str: string): number => {
 };
 
 export const obtenerImagenTematica = (titulo: string, categoria?: string): string => {
-  // Normalizar el texto para comparaciones (minúsculas, sin tildes)
+  // Normalizar el texto para comparaciones (minÃºsculas, sin tildes)
   const t = normalizar(`${titulo} ${categoria ?? ''}`);
 
-  // Orden de prioridad: categorías más específicas primero para evitar colisiones
+  // Orden de prioridad: categorÃ­as mÃ¡s especÃ­ficas primero para evitar colisiones
   // IMPORTANTE: Se usan patrones de palabra completa para evitar que "cortes" matchee "corte" (tribunal)
   const reglas: [RegExp, string][] = [
     // Movilidad y transporte (ANTES de seguridad para que "accidente vial" no vaya a seguridad)
     [/\b(movilidad|transito|trafico|accidente vial|ciclovia|metro|mio|troncal|semaforo|transporte|transmilenio|bus|via bloqueada|vias|peaje)\b/, 'movilidad'],
-    // Servicios públicos y utilities (ANTES de ambiente para que "agua" no vaya a medio ambiente)
+    // Servicios pÃºblicos y utilities (ANTES de ambiente para que "agua" no vaya a medio ambiente)
     [/\b(acueducto|agua potable|sin agua|corte de agua|corte del servicio|corte de luz|electricidad|gas natural|servicio publico|alcantarillado|basuras|recoleccion)\b/, 'servicios'],
-    // Economía y finanzas
+    // EconomÃ­a y finanzas
     [/\b(dolar|peso|inflacion|banco de la republica|tasa de interes|economia|finanzas|bolsa|mercado|dinero|inversion|precio|petroleo|barril|fmi|tributar|impuesto|recaudo|deficit|deuda)\b/, 'economia'],
-    // Justicia (solo términos judiciales, NO "cortes" de servicio)
+    // Justicia (solo tÃ©rminos judiciales, NO "cortes" de servicio)
     [/\b(fiscalia|corte suprema|consejo de estado|justicia|captura|carcel|tribunal|delito|acusado|demanda penal|abogado|sentencia|juicio|imputado|procesado)\b/, 'justicia'],
-    // Política y gobierno
+    // PolÃ­tica y gobierno
     [/\b(congreso|senado|reforma|presidente|gobierno|ministro|politica|elecciones|alcalde|canciller|voto|petro|espriella|decreto|proyecto de ley|gabinete)\b/, 'politica'],
-    // Seguridad y orden público
+    // Seguridad y orden pÃºblico
     [/\b(policia|ejercito|fuerza publica|seguridad|armas|operativo|orden publico|atentado|combate|detenido|capturado|asesinato|homicidio|hurto|robo|extorsion|eln|farc|disidentes)\b/, 'seguridad'],
-    // Tecnología
+    // TecnologÃ­a
     [/\b(inteligencia artificial|tecnologia|apple|google|microsoft|chip|nvidia|software|internet|ciber|hackers|app|celular|smartphone|startup)\b/, 'tecnologia'],
     // Salud
     [/\b(salud|hospital|medico|vacuna|enfermedad|virus|eps|cirugia|clinica|minsalud|pandemia|dengue|covid)\b/, 'salud'],
@@ -214,7 +172,7 @@ export const obtenerImagenTematica = (titulo: string, categoria?: string): strin
     [/\b(clima|lluvias|sequia|inundacion|desbordamiento|ambiente|calor extremo|volcan|incendio forestal|temblor|sismo|terremoto|fenomeno natural)\b/, 'ambiente'],
     // Deportes
     [/\b(futbol|partido|gol|seleccion colombia|copa|campeon|liga|estadio|atleta|deporte|olimpico|ciclismo|tenis)\b/, 'deportes'],
-    // Colombia (genérico, como último recurso regional)
+    // Colombia (genÃ©rico, como Ãºltimo recurso regional)
     [/\b(colombia|bogota|medellin|cali|barranquilla|cartagena|bucaramanga|yopal|casanare|antioquia|cundinamarca)\b/, 'colombia'],
   ];
 
@@ -229,21 +187,21 @@ export const obtenerImagenTematica = (titulo: string, categoria?: string): strin
   return arr[Math.abs(hashString(titulo)) % arr.length];
 };
 
-// Selecciona la imagen temática más apropiada sin depender de APIs externas
-// (Wikimedia Commons resultó ser impredecible — devolvía imágenes no relacionadas)
+// Selecciona la imagen temÃ¡tica mÃ¡s apropiada sin depender de APIs externas
+// (Wikimedia Commons resultÃ³ ser impredecible â€” devolvÃ­a imÃ¡genes no relacionadas)
 export const buscarImagenRelacionada = async (
   titulo: string,
   _medio?: string,
   categoria?: string
 ): Promise<string> => {
   const imgFallback = obtenerImagenTematica(titulo, categoria);
-  console.log(`   🎨 [Imagen] Seleccionando imagen temática para: "${titulo.slice(0, 50)}…"`);
+  console.log(`   ðŸŽ¨ [Imagen] Seleccionando imagen temÃ¡tica para: "${titulo.slice(0, 50)}â€¦"`);
   return imgFallback;
 };
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // NODO 1: Lector Web (extractor de titulares)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type MetodoExtraccion = 'google-rss' | 'rss' | 'json-ld' | 'articulo' | 'listado' | 'respaldo';
 
 interface Titular {
@@ -254,7 +212,7 @@ interface Titular {
   medio?: string; // Ej.: "El Tiempo"
   medioUrl?: string;
   cobertura?: string[]; // Otros medios que cubren la misma noticia
-  imagenUrl?: string;   // URL de la imagen principal del artículo
+  imagenUrl?: string;   // URL de la imagen principal del artÃ­culo
 }
 
 interface ResultadoExtraccion {
@@ -266,7 +224,7 @@ interface ResultadoExtraccion {
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
-// Selectores por orden de prioridad (del más específico al más genérico)
+// Selectores por orden de prioridad (del mÃ¡s especÃ­fico al mÃ¡s genÃ©rico)
 const SELECTORES_TITULARES = [
   '.titleline > a', // Hacker News
   'article h1 a, article h2 a, article h3 a',
@@ -286,11 +244,11 @@ const SELECTORES_GOOGLE_NOTICIAS = [
   'h3 a, h4 a',
 ];
 
-// Zonas de la página donde NO hay titulares editoriales
+// Zonas de la pÃ¡gina donde NO hay titulares editoriales
 const ZONAS_IGNORADAS =
   'nav, footer, aside, [role="navigation"], [class*="menu"], [class*="cookie"], [class*="newsletter"], [class*="sidebar"]';
 
-const TEXTOS_GENERICOS = /^(home|inicio|menu|menú|search|buscar|login|iniciar sesi[oó]n|subscribe|suscr[ií]bete|sign in|sign up|read more|leer m[aá]s|contact|contacto|about|acerca|newsletter|skip to|ver m[aá]s|m[aá]s |see more|view more|full coverage|cobertura completa)/i;
+const TEXTOS_GENERICOS = /^(home|inicio|menu|menÃº|search|buscar|login|iniciar sesi[oÃ³]n|subscribe|suscr[iÃ­]bete|sign in|sign up|read more|leer m[aÃ¡]s|contact|contacto|about|acerca|newsletter|skip to|ver m[aÃ¡]s|m[aÃ¡]s |see more|view more|full coverage|cobertura completa)/i;
 
 const esTitularValido = (t: string): boolean =>
   t.length >= 20 &&
@@ -301,7 +259,7 @@ const esTitularValido = (t: string): boolean =>
 // Quita sufijos tipo " | TechCrunch" o " - The Verge" (solo si el final es corto)
 const limpiarTitulo = (crudo: string): string => {
   const limpio = normalizarEspacios(crudo);
-  const m = /^(.{15,}?)\s+[|–—·•-]\s+([^|–—·•-]{2,30})$/.exec(limpio);
+  const m = /^(.{15,}?)\s+[|â€“â€”Â·â€¢-]\s+([^|â€“â€”Â·â€¢-]{2,30})$/.exec(limpio);
   return m ? m[1].trim() : limpio;
 };
 
@@ -315,7 +273,7 @@ const resolverUrl = (href: string | undefined, base: URL): string | undefined =>
   }
 };
 
-// Extrae la imagen principal de una página HTML (og:image → twitter:image → primera <img> relevante)
+// Extrae la imagen principal de una pÃ¡gina HTML (og:image â†’ twitter:image â†’ primera <img> relevante)
 const extraerImagenPrincipal = ($: ReturnType<typeof cheerio.load>, base: URL): string | undefined => {
   // 1) Open Graph
   const og = $('meta[property="og:image"]').attr('content');
@@ -336,7 +294,7 @@ const extraerImagenPrincipal = ($: ReturnType<typeof cheerio.load>, base: URL): 
     } catch { /* */ }
   }
 
-  // 4) Primera <img> dentro del cuerpo del artículo con dimensiones razonables
+  // 4) Primera <img> dentro del cuerpo del artÃ­culo con dimensiones razonables
   const zonas = ['article', '[role="main"]', 'main', '.post-content', '.entry-content', '.article-body'];
   for (const zona of zonas) {
     const el = $(`${zona} img`).first();
@@ -386,11 +344,11 @@ const esFeed = (contentType: string, cuerpo: string): boolean => {
 };
 
 // Quita prefijos editoriales ("Video |", "[Foto]"), sufijos de medio ("| El Colombiano")
-// y convierte titulares en MAYÚSCULAS SOSTENIDAS a formato normal.
+// y convierte titulares en MAYÃšSCULAS SOSTENIDAS a formato normal.
 const limpiarTituloNoticia = (crudo: string): string => {
   let t = normalizarEspacios(crudo)
-    .replace(/^\[(video|foto|fotos|galer[ií]a)\]\s*/i, '')
-    .replace(/^(video|fotos?|galer[ií]a|en vivo|opini[oó]n)\s*[|:–—-]\s+/i, '');
+    .replace(/^\[(video|foto|fotos|galer[iÃ­]a)\]\s*/i, '')
+    .replace(/^(video|fotos?|galer[iÃ­]a|en vivo|opini[oÃ³]n)\s*[|:â€“â€”-]\s+/i, '');
   t = limpiarTitulo(t);
 
   const letras = t.replace(/[^\p{L}]/gu, '');
@@ -402,7 +360,7 @@ const limpiarTituloNoticia = (crudo: string): string => {
   return t;
 };
 
-// ─────────────────────────────────────────────
+// â”€â”€ Estrategia 1: RSS / Atom â”€â”€
 const extraerDeFeed = (xml: string, base: URL): ResultadoExtraccion | null => {
   const $ = cheerio.load(xml, { xmlMode: true });
   const titulares: Titular[] = [];
@@ -432,7 +390,7 @@ const extraerDeFeed = (xml: string, base: URL): ResultadoExtraccion | null => {
   return { principal: titulares[0], otros: titulares.slice(1, MAX_TITULARES), metodo: 'rss' };
 };
 
-// ─────────────────────────────────────────────
+// â”€â”€ Estrategia 2: JSON-LD (Article / NewsArticle / BlogPosting) â”€â”€
 type Obj = Record<string, unknown>;
 
 const aplanarJsonLd = (dato: unknown): Obj[] => {
@@ -471,7 +429,7 @@ const extraerJsonLd = ($: cheerio.CheerioAPI, base: URL): Titular | null => {
   return null;
 };
 
-// ─────────────────────────────────────────────
+// â”€â”€ Estrategia 3: listados de portada / categorÃ­a â”€â”€
 const extraerListado = (
   $: cheerio.CheerioAPI,
   base: URL,
@@ -513,7 +471,7 @@ const obtenerDescripcionArticulo = async (enlace: string): Promise<string | unde
       if (texto.length >= 80) return texto;
     }
   } catch {
-    // Si el artículo no responde, el bot trabaja solo con el titular
+    // Si el artÃ­culo no responde, el bot trabaja solo con el titular
   }
   return undefined;
 };
@@ -552,7 +510,7 @@ const obtenerDatosArticulo = async (enlace: string): Promise<DatosArticulo> => {
   }
 };
 
-// ─────────────────────────────────────────────
+// â”€â”€ Google Noticias â”€â”€
 const esGoogleNoticias = (url: URL): boolean => url.hostname === 'news.google.com';
 
 // Reconstruye siempre ceid = GL:HL para evitar valores corruptos como "CO:3es-419"
@@ -613,7 +571,7 @@ const extraerDeFeedGoogle = (xml: string): ResultadoExtraccion | null => {
     titulo = limpiarTituloNoticia(titulo);
     if (!titulo) continue;
 
-    // La descripción del feed es HTML con la cobertura relacionada:
+    // La descripciÃ³n del feed es HTML con la cobertura relacionada:
     // <li><a>Titular</a> <font>Medio</font></li>
     const descHtml = $el.children('description').first().text();
     let cobertura: string[] = [];
@@ -649,7 +607,7 @@ const extraerDeGoogleNoticias = async (url: URL): Promise<ResultadoExtraccion> =
   // 1) Feed RSS del mismo tema
   try {
     const feedUrl = construirFeedGoogleNoticias(url);
-    console.log(`📡 [Nodo 1] Google Noticias detectado → feed: ${feedUrl}`);
+    console.log(`ðŸ“¡ [Nodo 1] Google Noticias detectado â†’ feed: ${feedUrl}`);
     const feed = await descargar(feedUrl);
     if (esFeed(feed.contentType, feed.cuerpo)) {
       const resultado = extraerDeFeedGoogle(feed.cuerpo);
@@ -662,8 +620,8 @@ const extraerDeGoogleNoticias = async (url: URL): Promise<ResultadoExtraccion> =
     motivoFeed = axios.isAxiosError(error) && error.response ? `HTTP ${error.response.status}` : error instanceof Error ? error.message : 'error desconocido';
   }
 
-  // 2) Respaldo: HTML de la página con selectores estructurales
-  console.warn(`⚠️ [Nodo 1] Feed no disponible (${motivoFeed}). Probando el HTML de la página...`);
+  // 2) Respaldo: HTML de la pÃ¡gina con selectores estructurales
+  console.warn(`âš ï¸ [Nodo 1] Feed no disponible (${motivoFeed}). Probando el HTML de la pÃ¡gina...`);
   try {
     const pagina = aplicarParametrosGoogle(new URL(url.pathname, 'https://news.google.com'), url);
     const { cuerpo } = await descargar(pagina.href);
@@ -680,7 +638,7 @@ const extraerDeGoogleNoticias = async (url: URL): Promise<ResultadoExtraccion> =
   }
 
   throw new Error(
-    `No se pudieron obtener noticias de Google Noticias (${motivoFeed}). Verifica que el ID del tema en la URL sea válido.`
+    `No se pudieron obtener noticias de Google Noticias (${motivoFeed}). Verifica que el ID del tema en la URL sea vÃ¡lido.`
   );
 };
 
@@ -693,7 +651,7 @@ const extraerTitular = async (
   if (esFeed(contentType, html)) {
     const feed = extraerDeFeed(html, url);
     if (feed) return feed;
-    throw new Error('El feed no contiene entradas con título');
+    throw new Error('El feed no contiene entradas con tÃ­tulo');
   }
 
   const $ = cheerio.load(html);
@@ -705,7 +663,7 @@ const extraerTitular = async (
       ''
   );
 
-  // 2) Página de un artículo concreto
+  // 2) PÃ¡gina de un artÃ­culo concreto
   if (jsonLd || ogTipo === 'article') {
     const titulo = jsonLd
       ? jsonLd.titulo
@@ -730,7 +688,7 @@ const extraerTitular = async (
     }
   }
 
-  // 3a) Portada con feed anunciado: el feed es más limpio que el HTML
+  // 3a) Portada con feed anunciado: el feed es mÃ¡s limpio que el HTML
   const hrefFeed = resolverUrl(
     $('link[rel="alternate"][type*="rss"], link[rel="alternate"][type*="atom"]').first().attr('href'),
     url
@@ -743,23 +701,23 @@ const extraerTitular = async (
         if (resultado) return resultado;
       }
     } catch {
-      // Si el feed falla, seguimos con las heurísticas de HTML
+      // Si el feed falla, seguimos con las heurÃ­sticas de HTML
     }
   }
 
-  // 3b) Heurísticas de titulares sobre el HTML
+  // 3b) HeurÃ­sticas de titulares sobre el HTML
   const candidatos = extraerListado($, url);
   if (candidatos.length > 0) {
     return { principal: candidatos[0], otros: candidatos.slice(1, MAX_TITULARES), metodo: 'listado' };
   }
 
-  // 4) Último recurso: título general de la página
+  // 4) Ãšltimo recurso: tÃ­tulo general de la pÃ¡gina
   const titulo = limpiarTitulo(
     $('meta[property="og:title"]').attr('content') ||
       $('h1').first().text() ||
       $('title').first().text()
   );
-  if (!titulo) throw new Error('No se encontró ningún titular en la página');
+  if (!titulo) throw new Error('No se encontrÃ³ ningÃºn titular en la pÃ¡gina');
 
   return {
     principal: { titulo, enlace: url.href, descripcion: descripcionMeta || undefined },
@@ -775,7 +733,7 @@ export const ejecutarNodoNoticias = async (
   const urlIngresada = nodo?.data?.url?.trim();
   const urlObjetivo = urlIngresada ? urlIngresada : URL_POR_DEFECTO;
 
-  // Configuración del nodo: cuántas noticias y si se evitan las ya publicadas
+  // ConfiguraciÃ³n del nodo: cuÃ¡ntas noticias y si se evitan las ya publicadas
   const cantidadPedida = Number(nodo?.data?.cantidad);
   const cantidad =
     Number.isFinite(cantidadPedida) && cantidadPedida >= 1
@@ -787,7 +745,7 @@ export const ejecutarNodoNoticias = async (
   try {
     url = new URL(urlObjetivo);
   } catch {
-    throw new Error(`URL inválida: "${urlObjetivo}"`);
+    throw new Error(`URL invÃ¡lida: "${urlObjetivo}"`);
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     throw new Error('Solo se permiten URLs http o https');
@@ -801,7 +759,7 @@ export const ejecutarNodoNoticias = async (
   if (googleNoticias) {
     resultado = await extraerDeGoogleNoticias(url);
   } else {
-    console.log(`🌐 [Nodo 1] Conectando a ${url.href}`);
+    console.log(`ðŸŒ [Nodo 1] Conectando a ${url.href}`);
     let pagina: { cuerpo: string; contentType: string };
     try {
       pagina = await descargar(url.href);
@@ -812,14 +770,14 @@ export const ejecutarNodoNoticias = async (
           : error instanceof Error
             ? error.message
             : 'error de red desconocido';
-      throw new Error(`No se pudo leer la página (${motivo})`);
+      throw new Error(`No se pudo leer la pÃ¡gina (${motivo})`);
     }
     resultado = await extraerTitular(pagina.cuerpo, pagina.contentType, url);
   }
 
   const { principal, otros, metodo } = resultado;
 
-  // ─────────────────────────────────────────────
+  // â”€â”€ SelecciÃ³n de varias noticias sin repetir â”€â”€
   const todos: Titular[] = [principal, ...otros];
   const yaVistas = evitarRepetidas ? leerHistorial() : [];
   const elegidos: Titular[] = [];
@@ -846,7 +804,7 @@ export const ejecutarNodoNoticias = async (
     );
   }
 
-  // ─────────────────────────────────────────────
+  // â”€â”€ Contexto RPC para el servicio interno de Google Noticias (DotsSplashUi) â”€â”€
   const GARTURLREQ_CTX = [
     ['X', 'X', ['X', 'X'], null, null, 1, 1, 'US:en', null, 1, null, null, null, null, null, 0, 1],
     'X',
@@ -862,7 +820,7 @@ export const ejecutarNodoNoticias = async (
     0,
   ];
 
-  // Decodifica la URL interna de Google Noticias a la URL real del medio de comunicación
+  // Decodifica la URL interna de Google Noticias a la URL real del medio de comunicaciÃ³n
   const decodificarUrlGoogleNoticias = async (enlace: string): Promise<string | null> => {
     try {
       const url = new URL(enlace);
@@ -925,23 +883,23 @@ export const ejecutarNodoNoticias = async (
         }
       }
     } catch (err) {
-      console.warn(`⚠️ [Nodo 1] Decodificación Google saltada: ${err instanceof Error ? err.message : String(err)}`);
+      console.warn(`âš ï¸ [Nodo 1] DecodificaciÃ³n Google saltada: ${err instanceof Error ? err.message : String(err)}`);
     }
     return null;
   };
 
   const categoria =
-    region === 'CO' ? 'Noticias Colombia' : googleNoticias ? 'Google Noticias' : 'Tecnología en Vivo';
+    region === 'CO' ? 'Noticias Colombia' : googleNoticias ? 'Google Noticias' : 'TecnologÃ­a en Vivo';
 
-  // ── Descripción e imagen real de cada artículo ──
-  console.log(`🔍 [Nodo 1] Extrayendo artículo e imagen para ${elegidos.length} noticia(s)...`);
+  // â”€â”€ DescripciÃ³n e imagen real de cada artÃ­culo â”€â”€
+  console.log(`ðŸ” [Nodo 1] Extrayendo artÃ­culo e imagen para ${elegidos.length} noticia(s)...`);
   const datosArticulos = await Promise.all(
     elegidos.map(async (t, i): Promise<DatosArticulo> => {
       let imagenUrlBase: string | undefined = t.imagenUrl;
       let urlParaExtraer = t.enlace;
       let descripcionFinal = t.descripcion;
 
-      // Si es un enlace de Google Noticias, resolver la URL real del periódico
+      // Si es un enlace de Google Noticias, resolver la URL real del periÃ³dico
       if (t.enlace && t.enlace.includes('news.google.com')) {
         const urlReal = await decodificarUrlGoogleNoticias(t.enlace);
         if (urlReal) {
@@ -957,13 +915,13 @@ export const ejecutarNodoNoticias = async (
         descripcionFinal = t.descripcion ?? datos.descripcion;
       }
 
-      // Si la noticia no traía imagen en origen o el scraping no la encontró,
-      // buscamos una imagen cercana y relevante basada en el título y contexto
+      // Si la noticia no traÃ­a imagen en origen o el scraping no la encontrÃ³,
+      // buscamos una imagen cercana y relevante basada en el tÃ­tulo y contexto
       if (!finalImg) {
-        console.log(`   🔎 [${i + 1}/${elegidos.length}] Buscando imagen relevante para: "${t.titulo.slice(0, 45)}…"`);
+        console.log(`   ðŸ”Ž [${i + 1}/${elegidos.length}] Buscando imagen relevante para: "${t.titulo.slice(0, 45)}â€¦"`);
         finalImg = await buscarImagenRelacionada(t.titulo, t.medio, categoria);
       } else {
-        console.log(`   📸 [${i + 1}/${elegidos.length}] ${t.titulo.slice(0, 45)}… → Imagen extraída ✔`);
+        console.log(`   ðŸ“¸ [${i + 1}/${elegidos.length}] ${t.titulo.slice(0, 45)}â€¦ â†’ Imagen extraÃ­da âœ”`);
       }
 
       return {
@@ -974,7 +932,7 @@ export const ejecutarNodoNoticias = async (
   );
 
   console.log(
-    `📰 [Nodo 1] Método: ${metodo} → ${elegidos.length} noticia(s) seleccionada(s)` +
+    `ðŸ“° [Nodo 1] MÃ©todo: ${metodo} â†’ ${elegidos.length} noticia(s) seleccionada(s)` +
       (omitidasPorHistorial > 0 ? ` (${omitidasPorHistorial} omitida(s) por ya publicadas)` : '')
   );
   elegidos.forEach((t, i) => console.log(`   ${i + 1}. ${t.titulo}`));
@@ -1000,19 +958,19 @@ export const ejecutarNodoNoticias = async (
       evitarRepetidas,
       advertencia:
         metodo === 'respaldo'
-          ? 'Solo se encontró el título general de la página. Prueba con un feed RSS o con la URL de un artículo.'
+          ? 'Solo se encontrÃ³ el tÃ­tulo general de la pÃ¡gina. Prueba con un feed RSS o con la URL de un artÃ­culo.'
           : '',
     },
   }));
 };
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // NODO 2: Procesador Inteligente (bot local)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 interface Tema {
   nombre: string;
   grupo?: 'noticias';
   hashtags: string[];
-  claves: string[]; // en minúsculas, sin tildes
+  claves: string[]; // en minÃºsculas, sin tildes
   gancho: string;
   cta: string;
 }
@@ -1022,182 +980,182 @@ const TEMAS_TECH: Tema[] = [
     nombre: 'Inteligencia Artificial',
     hashtags: ['#InteligenciaArtificial', '#IA'],
     claves: ['ai', 'ia', 'artificial intelligence', 'inteligencia artificial', 'gpt', 'llm', 'llms', 'openai', 'anthropic', 'gemini', 'claude', 'chatgpt', 'copilot', 'machine learning', 'aprendizaje', 'neural', 'agent', 'agentes', 'deepseek', 'mistral', 'llama', 'diffusion'],
-    gancho: '🤖 La inteligencia artificial sigue avanzando:',
-    cta: '¿Cómo crees que esto cambiará tu forma de trabajar?',
+    gancho: 'ðŸ¤– La inteligencia artificial sigue avanzando:',
+    cta: 'Â¿CÃ³mo crees que esto cambiarÃ¡ tu forma de trabajar?',
   },
   {
     nombre: 'Desarrollo Web',
     hashtags: ['#DesarrolloWeb', '#Frontend'],
     claves: ['javascript', 'typescript', 'react', 'vue', 'angular', 'svelte', 'node js', 'nodejs', 'next js', 'nextjs', 'css', 'html', 'frontend', 'backend', 'web', 'browser', 'navegador', 'chrome', 'firefox', 'vite', 'api', 'wasm', 'webassembly', 'framework'],
-    gancho: '🌐 Novedades para quienes construyen la web:',
-    cta: '¿Lo probarías en tu próximo proyecto?',
+    gancho: 'ðŸŒ Novedades para quienes construyen la web:',
+    cta: 'Â¿Lo probarÃ­as en tu prÃ³ximo proyecto?',
   },
   {
-    nombre: 'Programación',
+    nombre: 'ProgramaciÃ³n',
     hashtags: ['#Programacion', '#Coding'],
     claves: ['python', 'rust', 'golang', 'java', 'kotlin', 'swift', 'compiler', 'compilador', 'programming', 'programacion', 'developer', 'developers', 'desarrollador', 'code', 'coding', 'codigo', 'software', 'library', 'libreria'],
-    gancho: '👨‍💻 Para quienes viven en el código:',
-    cta: '¿Qué opinan los desarrolladores del equipo?',
+    gancho: 'ðŸ‘¨â€ðŸ’» Para quienes viven en el cÃ³digo:',
+    cta: 'Â¿QuÃ© opinan los desarrolladores del equipo?',
   },
   {
     nombre: 'Ciberseguridad',
     hashtags: ['#Ciberseguridad', '#InfoSec'],
     claves: ['security', 'seguridad', 'hack', 'hacker', 'breach', 'vulnerability', 'vulnerabilidad', 'ransomware', 'malware', 'exploit', 'cve', 'privacy', 'privacidad', 'encryption', 'cifrado', 'leak', 'phishing', 'attack', 'ataque'],
-    gancho: '🔐 Alerta de seguridad que conviene conocer:',
-    cta: '¿Tu equipo está preparado para algo así?',
+    gancho: 'ðŸ” Alerta de seguridad que conviene conocer:',
+    cta: 'Â¿Tu equipo estÃ¡ preparado para algo asÃ­?',
   },
   {
     nombre: 'Cloud y DevOps',
     hashtags: ['#Cloud', '#DevOps'],
     claves: ['cloud', 'nube', 'aws', 'azure', 'kubernetes', 'docker', 'devops', 'serverless', 'deploy', 'despliegue', 'infrastructure', 'infraestructura', 'server', 'servidor'],
-    gancho: '☁️ Novedades de infraestructura y nube:',
-    cta: '¿Cómo lo aplicarías en tu stack actual?',
+    gancho: 'â˜ï¸ Novedades de infraestructura y nube:',
+    cta: 'Â¿CÃ³mo lo aplicarÃ­as en tu stack actual?',
   },
   {
     nombre: 'Datos',
     hashtags: ['#Datos', '#Analytics'],
     claves: ['database', 'databases', 'base de datos', 'sql', 'postgres', 'postgresql', 'mysql', 'sqlite', 'mongodb', 'data', 'datos', 'analytics'],
-    gancho: '📊 Los datos vuelven a ser noticia:',
-    cta: '¿Cómo gestionas los datos en tus proyectos?',
+    gancho: 'ðŸ“Š Los datos vuelven a ser noticia:',
+    cta: 'Â¿CÃ³mo gestionas los datos en tus proyectos?',
   },
   {
-    nombre: 'Código Abierto',
+    nombre: 'CÃ³digo Abierto',
     hashtags: ['#OpenSource', '#CodigoAbierto'],
     claves: ['open source', 'opensource', 'codigo abierto', 'github', 'gitlab', 'linux', 'license', 'licencia', 'maintainer'],
-    gancho: '🧩 Novedades del mundo open source:',
-    cta: '¿Contribuyes a algún proyecto abierto?',
+    gancho: 'ðŸ§© Novedades del mundo open source:',
+    cta: 'Â¿Contribuyes a algÃºn proyecto abierto?',
   },
   {
     nombre: 'Hardware',
     hashtags: ['#Hardware', '#Tecnologia'],
     claves: ['chip', 'chips', 'gpu', 'nvidia', 'intel', 'amd', 'processor', 'procesador', 'semiconductor', 'iphone', 'android', 'smartphone', 'laptop', 'apple', 'samsung', 'device', 'dispositivo'],
-    gancho: '🔧 Novedades de hardware y dispositivos:',
-    cta: '¿Cambiarías tu equipo por esto?',
+    gancho: 'ðŸ”§ Novedades de hardware y dispositivos:',
+    cta: 'Â¿CambiarÃ­as tu equipo por esto?',
   },
   {
     nombre: 'Startups y Negocios',
     hashtags: ['#Startups', '#Negocios'],
     claves: ['startup', 'startups', 'funding', 'raises', 'acquisition', 'acquires', 'adquisicion', 'ipo', 'billion', 'million', 'inversion', 'ronda', 'valuation', 'layoffs', 'despidos'],
-    gancho: '💼 Movimientos en el mundo de los negocios tech:',
-    cta: '¿Qué impacto tendrá en el mercado?',
+    gancho: 'ðŸ’¼ Movimientos en el mundo de los negocios tech:',
+    cta: 'Â¿QuÃ© impacto tendrÃ¡ en el mercado?',
   },
   {
     nombre: 'Blockchain',
     hashtags: ['#Blockchain', '#Cripto'],
     claves: ['bitcoin', 'crypto', 'cryptocurrency', 'blockchain', 'ethereum', 'token', 'nft'],
-    gancho: '⛓️ Novedades en blockchain y criptomonedas:',
-    cta: '¿Ves futuro en esta tecnología?',
+    gancho: 'â›“ï¸ Novedades en blockchain y criptomonedas:',
+    cta: 'Â¿Ves futuro en esta tecnologÃ­a?',
   },
   {
-    nombre: 'Automatización',
+    nombre: 'AutomatizaciÃ³n',
     hashtags: ['#Automatizacion', '#Productividad'],
     claves: ['automation', 'automatizacion', 'workflow', 'workflows', 'n8n', 'zapier', 'bot', 'rpa', 'low code', 'no code'],
-    gancho: '⚙️ Automatizar es ganar tiempo:',
-    cta: '¿Qué tarea automatizarías primero?',
+    gancho: 'âš™ï¸ Automatizar es ganar tiempo:',
+    cta: 'Â¿QuÃ© tarea automatizarÃ­as primero?',
   },
   {
     nombre: 'Ciencia y Espacio',
     hashtags: ['#Ciencia', '#Espacio'],
     claves: ['space', 'espacio', 'nasa', 'spacex', 'quantum', 'cuantico', 'cuantica', 'physics', 'fisica', 'rocket', 'cohete', 'satellite', 'satelite', 'research', 'investigacion', 'study', 'estudio'],
-    gancho: '🔭 Ciencia y tecnología que abren horizontes:',
-    cta: '¿Hasta dónde crees que llegaremos?',
+    gancho: 'ðŸ”­ Ciencia y tecnologÃ­a que abren horizontes:',
+    cta: 'Â¿Hasta dÃ³nde crees que llegaremos?',
   },
 ];
 
 const TEMAS_NOTICIAS: Tema[] = [
   {
-    nombre: 'Política',
+    nombre: 'PolÃ­tica',
     grupo: 'noticias',
     hashtags: ['#Politica', '#Gobierno'],
     claves: ['gobierno', 'presidente', 'presidencia', 'congreso', 'senado', 'senador', 'ministro', 'ministra', 'elecciones', 'reforma', 'alcalde', 'alcaldia', 'gobernador', 'gobernacion', 'partido', 'candidato', 'campana', 'decreto', 'oposicion', 'consejo de estado'],
-    gancho: '🏛️ Lo que se mueve en la política nacional:',
-    cta: '¿Cómo crees que esto afectará al país?',
+    gancho: 'ðŸ›ï¸ Lo que se mueve en la polÃ­tica nacional:',
+    cta: 'Â¿CÃ³mo crees que esto afectarÃ¡ al paÃ­s?',
   },
   {
-    nombre: 'Seguridad y Orden Público',
+    nombre: 'Seguridad y Orden PÃºblico',
     grupo: 'noticias',
     hashtags: ['#Seguridad', '#OrdenPublico'],
     claves: ['ataque', 'atentado', 'capturado', 'captura', 'capturan', 'asesinato', 'asesinado', 'asesinan', 'homicidio', 'disidencias', 'eln', 'narcotrafico', 'cocaina', 'policia', 'ejercito', 'militar', 'militares', 'secuestro', 'bombardeo', 'criminal', 'banda', 'hurto', 'extorsion', 'incautan', 'incautacion', 'operativo', 'explosivos'],
-    gancho: '🚨 Atención, esto es lo que se conoce:',
-    cta: '¿Cómo ves la situación de seguridad en tu región?',
+    gancho: 'ðŸš¨ AtenciÃ³n, esto es lo que se conoce:',
+    cta: 'Â¿CÃ³mo ves la situaciÃ³n de seguridad en tu regiÃ³n?',
   },
   {
     nombre: 'Justicia',
     grupo: 'noticias',
     hashtags: ['#Justicia'],
     claves: ['fiscalia', 'juez', 'jueza', 'tribunal', 'corte', 'condena', 'sentencia', 'fallo', 'audiencia', 'demanda', 'tutela', 'procuraduria', 'juzgado', 'imputacion'],
-    gancho: '⚖️ Novedades desde los estrados:',
-    cta: '¿Estás de acuerdo con la decisión?',
+    gancho: 'âš–ï¸ Novedades desde los estrados:',
+    cta: 'Â¿EstÃ¡s de acuerdo con la decisiÃ³n?',
   },
   {
-    nombre: 'Economía',
+    nombre: 'EconomÃ­a',
     grupo: 'noticias',
     hashtags: ['#Economia', '#Finanzas'],
     claves: ['economia', 'inflacion', 'dolar', 'banco', 'tasa', 'impuesto', 'impuestos', 'tributaria', 'pib', 'empleo', 'desempleo', 'salario', 'petroleo', 'ecopetrol', 'gasolina', 'combustible', 'mercado', 'bolsa', 'arriendo', 'subsidio'],
-    gancho: '💰 Lo que debes saber sobre tu bolsillo:',
-    cta: '¿Cómo te afecta este cambio?',
+    gancho: 'ðŸ’° Lo que debes saber sobre tu bolsillo:',
+    cta: 'Â¿CÃ³mo te afecta este cambio?',
   },
   {
     nombre: 'Deportes',
     grupo: 'noticias',
     hashtags: ['#Deportes'],
     claves: ['futbol', 'seleccion', 'liga', 'gol', 'partido', 'ciclismo', 'tour', 'formula', 'campeonato', 'mundial', 'dimayor', 'tenis', 'atletismo', 'olimpicos'],
-    gancho: '⚽ Noticias del mundo deportivo:',
-    cta: '¿Quién se lleva tu apoyo?',
+    gancho: 'âš½ Noticias del mundo deportivo:',
+    cta: 'Â¿QuiÃ©n se lleva tu apoyo?',
   },
   {
     nombre: 'Clima y Emergencias',
     grupo: 'noticias',
     hashtags: ['#Clima', '#Emergencia'],
     claves: ['temblor', 'sismo', 'terremoto', 'lluvia', 'lluvias', 'inundacion', 'incendio', 'incendios', 'calor', 'clima', 'ideam', 'volcan', 'emergencia', 'damnificados', 'deslizamiento', 'nino', 'ceniza'],
-    gancho: '⚠️ Alerta y prevención:',
-    cta: '¿Estás preparado? Comparte para informar a otros.',
+    gancho: 'ðŸŒ¦ï¸ Alerta y prevenciÃ³n:',
+    cta: 'Â¿EstÃ¡s preparado? Comparte para informar a otros.',
   },
   {
     nombre: 'Movilidad y Servicios',
     grupo: 'noticias',
     hashtags: ['#Movilidad', '#Ciudad'],
     claves: ['pico y placa', 'transmilenio', 'metro', 'trancon', 'movilidad', 'transito', 'agua', 'acueducto', 'racionamiento', 'energia', 'transporte', 'aeropuerto', 'vuelo', 'avianca', 'peajes', 'cortes'],
-    gancho: '🚦 Si te mueves por la ciudad, esto te interesa:',
-    cta: '¿Cómo te afecta en tu día a día?',
+    gancho: 'ðŸš¦ Si te mueves por la ciudad, esto te interesa:',
+    cta: 'Â¿CÃ³mo te afecta en tu dÃ­a a dÃ­a?',
   },
   {
     nombre: 'Salud',
     grupo: 'noticias',
     hashtags: ['#Salud'],
     claves: ['salud', 'hospital', 'eps', 'medico', 'medicos', 'vacuna', 'epidemia', 'dengue', 'virus', 'sanitaria', 'enfermedad', 'clinica', 'eutanasia'],
-    gancho: '🏥 Información de salud que vale la pena conocer:',
-    cta: '¿Conocías esta información?',
+    gancho: 'ðŸ©º InformaciÃ³n de salud que vale la pena conocer:',
+    cta: 'Â¿ConocÃ­as esta informaciÃ³n?',
   },
   {
-    nombre: 'Educación',
+    nombre: 'EducaciÃ³n',
     grupo: 'noticias',
     hashtags: ['#Educacion'],
     claves: ['colegio', 'universidad', 'estudiantes', 'docentes', 'profesores', 'educacion', 'icfes', 'matricula', 'beca', 'sena'],
-    gancho: '🎓 Novedades del sector educativo:',
-    cta: '¿Cómo lo ven estudiantes y familias?',
+    gancho: 'ðŸŽ“ Novedades del sector educativo:',
+    cta: 'Â¿CÃ³mo lo ven estudiantes y familias?',
   },
   {
     nombre: 'Entretenimiento y Cultura',
     grupo: 'noticias',
     hashtags: ['#Entretenimiento', '#Cultura'],
     claves: ['cantante', 'artista', 'musica', 'concierto', 'pelicula', 'serie', 'festival', 'television', 'actor', 'actriz', 'reality', 'premio', 'masterchef', 'influencer'],
-    gancho: '🎭 Lo último en entretenimiento y cultura:',
-    cta: '¿Qué opinas?',
+    gancho: 'ðŸŽ¬ Lo Ãºltimo en entretenimiento y cultura:',
+    cta: 'Â¿QuÃ© opinas?',
   },
   {
     nombre: 'Internacional',
     grupo: 'noticias',
     hashtags: ['#Internacional'],
     claves: ['venezuela', 'estados unidos', 'eeuu', 'rusia', 'ucrania', 'israel', 'gaza', 'china', 'onu', 'trump', 'cancilleria', 'embajada', 'frontera', 'migrantes', 'ofac'],
-    gancho: '🌍 Una mirada al panorama internacional:',
-    cta: '¿Cómo crees que impactará a Colombia?',
+    gancho: 'ðŸŒŽ Una mirada al panorama internacional:',
+    cta: 'Â¿CÃ³mo crees que impactarÃ¡ a Colombia?',
   },
 ];
 
 const TEMAS: Tema[] = [...TEMAS_TECH, ...TEMAS_NOTICIAS];
 
-// Marcas y tecnologías conocidas → hashtag canónico
+// Marcas y tecnologÃ­as conocidas â†’ hashtag canÃ³nico
 const ENTIDADES: Record<string, string> = {
   google: '#Google', apple: '#Apple', microsoft: '#Microsoft', meta: '#Meta', amazon: '#Amazon',
   nvidia: '#Nvidia', tesla: '#Tesla', samsung: '#Samsung', openai: '#OpenAI', anthropic: '#Anthropic',
@@ -1207,7 +1165,7 @@ const ENTIDADES: Record<string, string> = {
   nasa: '#NASA', spacex: '#SpaceX', intel: '#Intel', amd: '#AMD', gemini: '#Gemini', claude: '#Claude',
 };
 
-// Lugares (clave normalizada y sin tildes) → hashtag
+// Lugares (clave normalizada y sin tildes) â†’ hashtag
 const LUGARES: Record<string, string> = {
   bogota: '#Bogota',
   medellin: '#Medellin',
@@ -1277,7 +1235,7 @@ const detectarLugares = (...textos: string[]): string[] => {
   return unicos(encontrados);
 };
 
-// Claves largas admiten variantes (agent → agents); las cortas exigen palabra exacta
+// Claves largas admiten variantes (agent â†’ agents); las cortas exigen palabra exacta
 const coincide = (haystack: string, clave: string): boolean =>
   clave.length >= 5 ? haystack.includes(` ${clave}`) : haystack.includes(` ${clave} `);
 
@@ -1298,7 +1256,7 @@ const extraerEntidades = (titulo: string): string[] => {
     if (conocida) {
       encontradas.push(conocida);
     } else if (/^[A-Z][a-z]+[A-Z][A-Za-z]*$/.test(palabra)) {
-      encontradas.push(`#${palabra}`); // CamelCase: OpenAI, TransMilenio…
+      encontradas.push(`#${palabra}`); // CamelCase: OpenAI, TransMilenioâ€¦
     }
   }
   return encontradas;
@@ -1319,15 +1277,15 @@ const primerasFrases = (texto: string, max: number): string => {
 const fraseFuente = (medio: string, cobertura: string[]): string => {
   if (!medio) return '';
   const otros = [...new Set(cobertura.filter((m) => m.toLowerCase() !== medio.toLowerCase()))].slice(0, 2);
-  if (otros.length === 0) return `Información publicada por ${medio}.`;
+  if (otros.length === 0) return `InformaciÃ³n publicada por ${medio}.`;
   const lista = new Intl.ListFormat('es', { style: 'long', type: 'conjunction' }).format(otros);
-  return `Información publicada por ${medio}, con cobertura también de ${lista}.`;
+  return `InformaciÃ³n publicada por ${medio}, con cobertura tambiÃ©n de ${lista}.`;
 };
 
 export const ejecutarNodoGeminiLocal = async (
   inputData: WorkflowItem[]
 ): Promise<WorkflowItem[]> => {
-  console.log('🤖 [Nodo 2] El bot está analizando el contenido...');
+  console.log('ðŸ¤– [Nodo 2] El bot estÃ¡ analizando el contenido...');
   const resultados: WorkflowItem[] = [];
 
   for (const item of inputData) {
@@ -1341,11 +1299,11 @@ export const ejecutarNodoGeminiLocal = async (
       ? noticia.cobertura.filter((m: unknown): m is string => typeof m === 'string')
       : [];
 
-    // La descripción se ignora si solo repite el titular
+    // La descripciÃ³n se ignora si solo repite el titular
     const repiteTitular = normalizar(descripcionCruda).startsWith(normalizar(titulo).slice(0, 30));
     const descripcion = repiteTitular ? '' : descripcionCruda;
 
-    // 1) Detección de temas
+    // 1) DetecciÃ³n de temas
     const hayTitulo = ` ${tokenizar(titulo).join(' ')} `;
     const hayDescripcion = ` ${tokenizar(descripcion).join(' ')} `;
     const temasPuntuados = TEMAS.map((tema) => ({
@@ -1368,7 +1326,7 @@ export const ejecutarNodoGeminiLocal = async (
     const lugares = detectarLugares(titulo, descripcion).slice(0, 2);
     const entidades = unicos(extraerEntidades(titulo)).slice(0, 2);
 
-    // 3) Hashtags: contexto primero, cierre fijo al final (máximo 6)
+    // 3) Hashtags: contexto primero, cierre fijo al final (mÃ¡ximo 6)
     const finales = grupoNoticias ? ['#Actualidad', '#Noticias'] : ['#TechNews'];
     const base = unicos([
       ...(esColombia ? ['#Colombia'] : []),
@@ -1381,7 +1339,7 @@ export const ejecutarNodoGeminiLocal = async (
     const hashtags = unicos([...base.slice(0, 6 - finales.length), ...finales]);
 
     // 4) Resumen limpio
-    let resumenBot = sanitizarTipografia(primerasFrases(descripcion, 180));
+    let resumenBot = primerasFrases(descripcion, 180);
     if (!resumenBot) {
       if (grupoNoticias) {
         resumenBot = [fraseFuente(medio, cobertura), principal ? `Tema: ${principal.nombre}.` : '']
@@ -1394,19 +1352,19 @@ export const ejecutarNodoGeminiLocal = async (
       }
     }
 
-    // 5) Copy largo y corto (≤ 280 caracteres)
-    const gancho = principal?.gancho ?? (grupoNoticias ? '📢 Última hora:' : '📢 Última hora en tecnología:');
-    const cta = principal?.cta ?? '¿Qué opinas de esta noticia?';
+    // 5) Copy largo y corto (â‰¤ 280 caracteres)
+    const gancho = principal?.gancho ?? (grupoNoticias ? 'ðŸ“¢ Ãšltima hora:' : 'ðŸ“¢ Ãšltima hora en tecnologÃ­a:');
+    const cta = principal?.cta ?? 'Â¿QuÃ© opinas de esta noticia?';
 
-    // Los enlaces de redirección de Google son larguísimos: no se incluyen en el copy
+    // Los enlaces de redirecciÃ³n de Google son larguÃ­simos: no se incluyen en el copy
     const enlaceCopy = enlace.length <= 120 ? enlace : '';
 
     const textoRedes = [
       gancho,
-      `📰 ${titulo}`,
+      `ðŸ“° ${titulo}`,
       resumenBot || null,
-      `💬 ${cta}`,
-      enlaceCopy ? `🔗 ${enlaceCopy}` : null,
+      `ðŸ’¬ ${cta}`,
+      enlaceCopy ? `ðŸ”— ${enlaceCopy}` : null,
       hashtags.join(' '),
     ]
       .filter((seccion): seccion is string => Boolean(seccion))
@@ -1439,9 +1397,9 @@ export const ejecutarNodoGeminiLocal = async (
   return resultados;
 };
 
-// ─────────────────────────────────────────────
-// NODO 3: Generador Gráfico
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// NODO 3: Generador GrÃ¡fico
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const dividirLineas = (
   ctx: CanvasRenderingContext2D,
   texto: string,
@@ -1465,13 +1423,13 @@ const dividirLineas = (
 
   if (lineas.length > maxLineas) {
     const recorte = lineas.slice(0, maxLineas);
-    recorte[maxLineas - 1] = `${recorte[maxLineas - 1].replace(/[.,;:\s]+$/, '')}...`;
+    recorte[maxLineas - 1] = `${recorte[maxLineas - 1].replace(/[.,;:\s]+$/, '')}â€¦`;
     return recorte;
   }
   return lineas;
 };
 
-// Dibuja un rectángulo con esquinas redondeadas
+// Dibuja un rectÃ¡ngulo con esquinas redondeadas
 const dibujarRectanguloRedondeado = (
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -1502,7 +1460,7 @@ interface LineaColor {
   palabras: PalabraRender[];
 }
 
-// Divide el titular en líneas manteniendo el coloreado de palabras clave (#38bdf8)
+// Divide el titular en lÃ­neas manteniendo el coloreado de palabras clave (#38bdf8)
 const dividirLineasConColores = (
   ctx: CanvasRenderingContext2D,
   textoCompleto: string,
@@ -1543,7 +1501,7 @@ const dividirLineasConColores = (
     const ultima = lineas[maxLineas - 1];
     if (ultima && ultima.palabras.length > 0) {
       const ultPalabra = ultima.palabras[ultima.palabras.length - 1];
-      ultPalabra.texto = `${ultPalabra.texto.replace(/[.,;:\s]+$/, '')}...`;
+      ultPalabra.texto = `${ultPalabra.texto.replace(/[.,;:\s]+$/, '')}â€¦`;
     }
   }
 
@@ -1572,7 +1530,7 @@ export const renderizarTarjeta = async (
 }> => {
   fs.mkdirSync(carpetaDestino, { recursive: true });
 
-  // 1. Dimensiones estilo infografía / Instagram (1080 x 1350 px, vertical 4:5)
+  // 1. Dimensiones estilo infografÃ­a / Instagram (1080 x 1350 px, vertical 4:5)
   const width = 1080;
   const height = 1350;
   const X_PAD = 70;
@@ -1602,13 +1560,13 @@ export const renderizarTarjeta = async (
       imgCargada = await loadImage(imgBuffer);
     } catch (err) {
       console.warn(
-        `⚠️ [Nodo 3] No se pudo cargar imagen de fondo: ${err instanceof Error ? err.message : String(err)}`
+        `âš ï¸ [Nodo 3] No se pudo cargar imagen de fondo: ${err instanceof Error ? err.message : String(err)}`
       );
       imgCargada = null;
     }
   }
 
-  // 2b. Si no vino imagen o falló la descarga, buscar una imagen relacionada de respaldo garantizada
+  // 2b. Si no vino imagen o fallÃ³ la descarga, buscar una imagen relacionada de respaldo garantizada
   if (!imgCargada) {
     try {
       const fallbackUrl = await buscarImagenRelacionada(
@@ -1617,7 +1575,7 @@ export const renderizarTarjeta = async (
         String(datos.categoria || '')
       );
       if (fallbackUrl) {
-        console.log(`   🔄 [Nodo 3] Cargando imagen relacionada de respaldo en canvas...`);
+        console.log(`   ðŸ”„ [Nodo 3] Cargando imagen relacionada de respaldo en canvas...`);
         const respFallback = await axios.get<ArrayBuffer>(fallbackUrl, {
           headers: {
             'User-Agent': USER_AGENT,
@@ -1629,7 +1587,7 @@ export const renderizarTarjeta = async (
         imgCargada = await loadImage(Buffer.from(respFallback.data));
       }
     } catch (err) {
-      console.warn(`⚠️ [Nodo 3] Error cargando imagen de respaldo en canvas: ${err instanceof Error ? err.message : String(err)}`);
+      console.warn(`âš ï¸ [Nodo 3] Error cargando imagen de respaldo en canvas: ${err instanceof Error ? err.message : String(err)}`);
       imgCargada = null;
     }
   }
@@ -1651,7 +1609,7 @@ export const renderizarTarjeta = async (
     ctx.fillRect(0, 0, width, height);
   }
 
-  // 4. Overlays degradados para máxima legibilidad
+  // 4. Overlays degradados para mÃ¡xima legibilidad
   // Degradado superior (para marca de agua y Picture-in-Picture)
   const gradTop = ctx.createLinearGradient(0, 0, 0, 240);
   gradTop.addColorStop(0, 'rgba(3, 7, 18, 0.85)');
@@ -1659,7 +1617,7 @@ export const renderizarTarjeta = async (
   ctx.fillStyle = gradTop;
   ctx.fillRect(0, 0, width, 240);
 
-  // Degradado inferior profundo (de transparente a oscuro casi sólido)
+  // Degradado inferior profundo (de transparente a oscuro casi sÃ³lido)
   const gradBottom = ctx.createLinearGradient(0, 480, 0, height);
   gradBottom.addColorStop(0, 'rgba(3, 7, 18, 0)');
   gradBottom.addColorStop(0.28, 'rgba(3, 7, 18, 0.5)');
@@ -1727,7 +1685,7 @@ export const renderizarTarjeta = async (
   ctx.stroke();
   ctx.restore();
 
-  // 7. Preparación de Palabras Clave para el Resaltado en Cian (#38bdf8)
+  // 7. PreparaciÃ³n de Palabras Clave para el Resaltado en Cian (#38bdf8)
   const palabrasClaveRaw: string[] = Array.isArray(datos.palabrasClave)
     ? datos.palabrasClave
     : Array.isArray(datos.analisis?.palabrasClave)
@@ -1751,7 +1709,7 @@ export const renderizarTarjeta = async (
       .filter(Boolean)
   );
 
-  // 8. Cálculo de Layout Dinámico del Bloque Inferior
+  // 8. CÃ¡lculo de Layout DinÃ¡mico del Bloque Inferior
   ctx.font = 'bold 50px Arial, Helvetica, sans-serif';
   const lineasTitular = dividirLineasConColores(
     ctx,
@@ -1762,7 +1720,7 @@ export const renderizarTarjeta = async (
   );
   const titularAlto = lineasTitular.length * 66;
 
-  const resumen = sanitizarTipografia(String(datos.resumenBot ?? '')).trim();
+  const resumen = String(datos.resumenBot ?? '').trim();
   ctx.font = '24px Arial, sans-serif';
   const lineasResumen = resumen ? dividirLineas(ctx, resumen, maxAncho, 2) : [];
   const resumenAlto = lineasResumen.length > 0 ? lineasResumen.length * 34 + 18 : 0;
@@ -1774,8 +1732,8 @@ export const renderizarTarjeta = async (
     pillH + gapPillTitle + titularAlto + (resumenAlto > 0 ? 20 + resumenAlto : 0);
   const inicioY = Math.max(720, creditosY - 35 - totalTextoH);
 
-  // 9. Etiqueta de Categoría Superior (Pastilla Azul con Texto Blanco)
-  const catTexto = sanitizarTipografia(String(datos.categoria ?? 'NOTICIAS')).toUpperCase();
+  // 9. Etiqueta de CategorÃ­a Superior (Pastilla Azul con Texto Blanco)
+  const catTexto = String(datos.categoria ?? 'NOTICIAS').toUpperCase();
   ctx.font = 'bold 16px Arial, sans-serif';
   const pillW = ctx.measureText(catTexto).width + 36;
   const pillY = inicioY;
@@ -1818,7 +1776,7 @@ export const renderizarTarjeta = async (
   }
   ctx.restore();
 
-  // 11. Subtítulo / Resumen
+  // 11. SubtÃ­tulo / Resumen
   if (lineasResumen.length > 0) {
     curY += 8;
     ctx.save();
@@ -1833,7 +1791,7 @@ export const renderizarTarjeta = async (
     ctx.restore();
   }
 
-  // 12. Crédito Inferior (Línea, Fuente y Enlace)
+  // 12. CrÃ©dito Inferior (LÃ­nea, Fuente y Enlace)
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -1858,9 +1816,9 @@ export const renderizarTarjeta = async (
       const dominio = urlObj.hostname.replace(/^www\./, '');
       const rutaCorta =
         urlObj.pathname.length > 28
-          ? `${urlObj.pathname.slice(0, 25)}…`
+          ? `${urlObj.pathname.slice(0, 25)}â€¦`
           : urlObj.pathname;
-      const textoEnlace = `🔗 ${dominio}${rutaCorta !== '/' ? rutaCorta : ''}`;
+      const textoEnlace = `ðŸ”— ${dominio}${rutaCorta !== '/' ? rutaCorta : ''}`;
       ctx.textAlign = 'right';
       ctx.fillStyle = '#38bdf8';
       ctx.font = 'bold 15px Arial, sans-serif';
@@ -1871,7 +1829,7 @@ export const renderizarTarjeta = async (
       ctx.textAlign = 'right';
       ctx.fillStyle = '#38bdf8';
       ctx.font = 'bold 15px Arial, sans-serif';
-      ctx.fillText(`🔗 ${limpio}`, width - X_PAD, creditosY + 40);
+      ctx.fillText(`ðŸ”— ${limpio}`, width - X_PAD, creditosY + 40);
       ctx.textAlign = 'left';
     }
   }
@@ -1898,7 +1856,7 @@ export const ejecutarNodoGeneradorImagen = async (
   const nodo3 = nodesData?.find((n) => n.id === '3');
   const colorConfig = nodo3?.data?.colorAcento;
 
-  console.log(`🎨 [Nodo 3] Renderizando ${inputData.length} imagen(es) PNG...`);
+  console.log(`ðŸŽ¨ [Nodo 3] Renderizando ${inputData.length} imagen(es) PNG...`);
   const resultados: WorkflowItem[] = [];
   const nuevasEnHistorial: EntradaHistorial[] = [];
   const marca = Date.now();
@@ -1911,7 +1869,7 @@ export const ejecutarNodoGeneradorImagen = async (
     });
 
     console.log(
-      `🖼️ ${indice + 1}/${inputData.length} guardada en: ${resultadoRender.imagenPath}${resultadoRender.tieneMiniatura ? ' [con imagen]' : ''}`
+      `ðŸ–¼ï¸ ${indice + 1}/${inputData.length} guardada en: ${resultadoRender.imagenPath}${resultadoRender.tieneMiniatura ? ' [con imagen]' : ''}`
     );
 
     if (datos.evitarRepetidas === true && typeof datos.claveHistorial === 'string') {
@@ -1927,7 +1885,7 @@ export const ejecutarNodoGeneradorImagen = async (
         ...datos,
         ...resultadoRender,
         colorAcento: datos.colorAcento || '#38bdf8',
-        estado: '¡Scraping, análisis y diseño completados!',
+        estado: 'Â¡Scraping, anÃ¡lisis y diseÃ±o completados!',
       },
     });
   }
@@ -1937,9 +1895,9 @@ export const ejecutarNodoGeneradorImagen = async (
   return resultados;
 };
 
-// ─────────────────────────────────────────────
-// NODO 4: Publicador Automático en Buffer (Buffer API)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// NODO 4: Publicador AutomÃ¡tico en Buffer (Buffer API)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export interface BufferPostResultado {
   bufferUpdateId: string;
   estadoBuffer: 'publicado' | 'encolado' | 'programado' | 'simulado' | 'error';
@@ -2144,8 +2102,8 @@ export const ejecutarNodoBuffer = async (
     const textoPost = truncarParaTwitter(textoBase);
 
     // Prioridad de imagen:
-    // 1) PNG local generado por Nodo 3 → se sube a host p�blico (imgbb o 0x0.st)
-    // 2) URL p�blica de la noticia como fallback
+    // 1) PNG local generado por Nodo 3 → se sube a host público (imgbb o 0x0.st)
+    // 2) URL pública de la noticia como fallback
     let imagenPublicaFinal: string | undefined = undefined;
 
     const rutaImagenLocal = datos.imagenPath && typeof datos.imagenPath === 'string' ? datos.imagenPath : '';

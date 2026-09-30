@@ -12,6 +12,12 @@ export type WorkflowNodeData = {
   cantidad?: number;
   evitarRepetidas?: boolean;
   colorAcento?: string;
+  bufferAccessToken?: string;
+  bufferProfileId?: string;
+  bufferModo?: 'queue' | 'schedule' | 'now';
+  bufferFechaProgramada?: string;
+  canalNombre?: string;
+  imgbbApiKey?: string;
   duracionMs?: number;
   error?: string;
 };

@@ -4,6 +4,7 @@ import {
   ejecutarNodoNoticias,
   ejecutarNodoGeminiLocal,
   ejecutarNodoGeneradorImagen,
+  ejecutarNodoBuffer,
   renderizarTarjeta,
 } from './engine/workflowEngine.js';
 import type { CanvasNode, NodeEvent, WorkflowItem } from './engine/types.js';
@@ -44,11 +45,16 @@ app.post('/api/execute', async (req, res) => {
     res.write(`${JSON.stringify(evento)}\n`);
   };
 
-  const pasos: { id: string; run: (entrada: WorkflowItem[]) => Promise<WorkflowItem[]> }[] = [
+  const todosLosPasos: { id: string; run: (entrada: WorkflowItem[]) => Promise<WorkflowItem[]> }[] = [
     { id: '1', run: () => ejecutarNodoNoticias(nodes) },
     { id: '2', run: (entrada) => ejecutarNodoGeminiLocal(entrada) },
     { id: '3', run: (entrada) => ejecutarNodoGeneradorImagen(entrada, nodes) },
+    { id: '4', run: (entrada) => ejecutarNodoBuffer(entrada, nodes) },
   ];
+
+  const pasos = nodes.length > 0
+    ? todosLosPasos.filter((p) => nodes.some((n) => n.id === p.id))
+    : todosLosPasos;
 
   let datos: WorkflowItem[] = [];
 
