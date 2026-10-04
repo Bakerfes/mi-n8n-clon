@@ -315,6 +315,24 @@ const resolverUrl = (href: string | undefined, base: URL): string | undefined =>
   }
 };
 
+/** Limpia parámetros analíticos y de rastreo (UTM, ref) para entregar un enlace limpio */
+const limpiarEnlaceParaCopy = (urlStr: string): string => {
+  if (!urlStr) return '';
+  try {
+    const u = new URL(urlStr);
+    const paramsParaBorrar: string[] = [];
+    u.searchParams.forEach((_, key) => {
+      if (/^(utm_|ref|fbclid|gclid|source|ocid)/i.test(key)) {
+        paramsParaBorrar.push(key);
+      }
+    });
+    paramsParaBorrar.forEach((k) => u.searchParams.delete(k));
+    return u.href;
+  } catch {
+    return urlStr;
+  }
+};
+
 // Extrae la imagen principal de una página HTML (og:image → twitter:image → primera <img> relevante)
 const extraerImagenPrincipal = ($: ReturnType<typeof cheerio.load>, base: URL): string | undefined => {
   // 1) Open Graph
@@ -1141,7 +1159,7 @@ const TEMAS_NOTICIAS: Tema[] = [
     nombre: 'Deportes',
     grupo: 'noticias',
     hashtags: ['#Deportes'],
-    claves: ['futbol', 'seleccion', 'liga', 'gol', 'partido', 'ciclismo', 'tour', 'formula', 'campeonato', 'mundial', 'dimayor', 'tenis', 'atletismo', 'olimpicos'],
+    claves: ['futbol', 'seleccion', 'liga', 'gol', 'partido', 'ciclismo', 'tour', 'formula', 'campeonato', 'copa mundial', 'mundial de', 'dimayor', 'tenis', 'atletismo', 'olimpicos'],
     gancho: '⚽ Noticias del mundo deportivo:',
     cta: '¿Quién se lleva tu apoyo?',
   },
@@ -1149,7 +1167,7 @@ const TEMAS_NOTICIAS: Tema[] = [
     nombre: 'Clima y Emergencias',
     grupo: 'noticias',
     hashtags: ['#Clima', '#Emergencia'],
-    claves: ['temblor', 'sismo', 'terremoto', 'lluvia', 'lluvias', 'inundacion', 'incendio', 'incendios', 'calor', 'clima', 'ideam', 'volcan', 'emergencia', 'damnificados', 'deslizamiento', 'nino', 'ceniza'],
+    claves: ['temblor', 'sismo', 'terremoto', 'lluvia', 'lluvias', 'inundacion', 'incendio', 'incendios', 'calor', 'clima', 'ideam', 'volcan', 'emergencia', 'damnificados', 'deslizamiento', 'nino', 'ceniza', 'biodiversidad', 'ambiente', 'medio ambiente', 'planeta', 'naturaleza', 'ecologia', 'climate'],
     gancho: '⚠️ Alerta y prevención:',
     cta: '¿Estás preparado? Comparte para informar a otros.',
   },
@@ -1380,7 +1398,7 @@ export const ejecutarNodoGeminiLocal = async (
 
     const hashtags = unicos([...base.slice(0, 6 - finales.length), ...finales]);
 
-    // 4) Resumen limpio
+    // 4) Resumen breve para la tarjeta gráfica (se mantiene intacto para el canvas del Nodo 3)
     let resumenBot = sanitizarTipografia(primerasFrases(descripcion, 180));
     if (!resumenBot) {
       if (grupoNoticias) {
@@ -1394,33 +1412,75 @@ export const ejecutarNodoGeminiLocal = async (
       }
     }
 
-    // 5) Copy largo y corto (≤ 280 caracteres)
+    // 4b) Descripción extensa y detallada para el copy de la publicación (Nodo 2 / Buffer)
+    // Aporta contexto periodístico profundo, antecedentes y desarrollo sin limitarse a la tarjeta
+    const textoOrigen = String(noticia.contenidoExtenso || descripcionCruda || descripcion || '');
+    let descripcionExtensa = '';
+
+    if (textoOrigen && textoOrigen.length > resumenBot.length + 30) {
+      descripcionExtensa = sanitizarTipografia(primerasFrases(textoOrigen, 450));
+    }
+
+    if (!descripcionExtensa || descripcionExtensa === resumenBot) {
+      const parrafosExtra: string[] = [];
+      if (resumenBot) parrafosExtra.push(resumenBot);
+
+      const detallesNarrativos: string[] = [];
+      if (lugares.length > 0) {
+        detallesNarrativos.push(`El desarrollo de la noticia tiene como escenario principal a ${lugares.map((l) => l.replace('#', '')).join(', ')}.`);
+      }
+      if (entidades.length > 0) {
+        detallesNarrativos.push(`Cuenta con la participación destacada de ${entidades.map((e) => e.replace('#', '')).join(' y ')}.`);
+      }
+      if (medio) {
+        detallesNarrativos.push(`Según reporta ${medio}, los detalles y las implicaciones de este hecho continúan generando amplio interés público.`);
+      } else {
+        detallesNarrativos.push(`Este acontecimiento marca un momento relevante en la agenda de ${principal?.nombre ?? 'actualidad'}.`);
+      }
+
+      if (detallesNarrativos.length > 0) {
+        parrafosExtra.push(detallesNarrativos.join(' '));
+      }
+
+      descripcionExtensa = parrafosExtra.join('\n\n');
+    }
+
+    // 5) Copy largo y corto para la publicación
     const gancho = principal?.gancho ?? (grupoNoticias ? '📢 Última hora:' : '📢 Última hora en tecnología:');
     const cta = principal?.cta ?? '¿Qué opinas de esta noticia?';
 
-    // Los enlaces de redirección de Google son larguísimos: no se incluyen en el copy
-    const enlaceCopy = enlace.length <= 120 ? enlace : '';
+    // Enlace limpio y directo a la noticia original
+    const enlaceNoticia = limpiarEnlaceParaCopy(enlace);
+    const seccionEnlace = enlaceNoticia ? `🔗 Noticia completa: ${enlaceNoticia}` : null;
 
-    const textoRedes = [
+    const textoRedes = sanitizarTipografia([
       gancho,
       `📰 ${titulo}`,
-      resumenBot || null,
+      descripcionExtensa || resumenBot || null,
+      seccionEnlace,
       `💬 ${cta}`,
-      enlaceCopy ? `🔗 ${enlaceCopy}` : null,
       hashtags.join(' '),
     ]
       .filter((seccion): seccion is string => Boolean(seccion))
-      .join('\n\n');
+      .join('\n\n'));
 
     const hashtagsCortos = hashtags.slice(0, 3).join(' ');
-    const espacioTitulo = Math.max(40, 280 - gancho.length - hashtagsCortos.length - 4);
-    const copyCorto = [gancho, recortar(titulo, espacioTitulo), hashtagsCortos].join('\n\n');
+    const espacioTitulo = Math.max(40, 280 - gancho.length - hashtagsCortos.length - (enlaceNoticia ? enlaceNoticia.length + 6 : 0) - 8);
+    const copyCorto = [
+      gancho,
+      recortar(titulo, espacioTitulo),
+      enlaceNoticia ? `🔗 ${enlaceNoticia}` : '',
+      hashtagsCortos,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
 
     resultados.push({
       json: {
         ...noticia,
         categoria: principal?.nombre ?? noticia.categoria,
         resumenBot,
+        descripcionExtensa,
         textoRedes,
         copyCorto,
         hashtags,
@@ -1955,9 +2015,22 @@ export interface BufferPostResultado {
 
 // ─── Helpers para Nodo 4 (Buffer) ─────────────────────────────────────────────
 
-/** Trunca texto para Twitter/X (max 280 chars) cortando en limite de palabra */
+/** Trunca texto para Twitter/X (max 280 chars) cortando en limite de palabra y preservando enlaces */
 const truncarParaTwitter = (texto: string): string => {
   if (texto.length <= 280) return texto;
+
+  // Extraer enlace si existe para preservarlo intacto al final
+  const urlMatch = texto.match(/(https?:\/\/[^\s]+)/);
+  if (urlMatch) {
+    const url = urlMatch[1];
+    const espacioRestante = Math.max(60, 272 - url.length);
+    const textoSinUrl = texto.replace(`🔗 Noticia completa: ${url}`, '').replace(url, '').replace(/\s+/g, ' ').trim();
+    const cortado = textoSinUrl.slice(0, espacioRestante);
+    const ultimoEspacio = cortado.lastIndexOf(' ');
+    const corteSeguro = ultimoEspacio > 30 ? cortado.slice(0, ultimoEspacio) : cortado;
+    return `${corteSeguro}... 🔗 ${url}`;
+  }
+
   const cortado = texto.slice(0, 277);
   const ultimoEspacio = cortado.lastIndexOf(' ');
   const corteSeguro = ultimoEspacio > 200 ? cortado.slice(0, ultimoEspacio) : cortado;
